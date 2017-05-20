@@ -23,3 +23,4 @@
 #define SYS_hello  22 
 #define SYS_waitpid 23
 #define SYS_set_priority 24
+#define SYS_v2p 25

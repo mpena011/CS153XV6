@@ -559,3 +559,27 @@ int waitpid(int pid, int *status, int options) {
 	}
 	return -1;
 }
+
+int v2p(int virtual, int *physical){
+  
+  pde_t *pde;
+  pde_t *pte;
+  pde_t *physpagenum;
+
+  pde = &proc->pgdir[PDX(&virtual)];
+
+  if (*pde & PTE_P) {
+    pte = (pde_t*)P2V(PTE_ADDR(*pde));
+  } else {
+    return -1;
+  }
+  physpagenum = &pte[PTX(&virtual)];
+
+  if (*physpagenum & PTE_P) {
+    *physical = PTE_ADDR(*physpagenum) | PTE_FLAGS(&virtual);
+  } else {
+    return -1;
+  }
+
+  return (int)*physical;
+}

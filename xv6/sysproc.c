@@ -115,3 +115,12 @@ int sys_set_priority(void) {
 	set_priority(priority);
 	return 0;
 }
+
+
+int sys_v2p(void) {
+  int virtual;
+  argint(0, &virtual);
+  int* physical;
+  argptr(1,(char **) &physical, 0);
+  return v2p(virtual, physical);
+}
