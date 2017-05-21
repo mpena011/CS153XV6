@@ -149,7 +149,7 @@ fork(void)
   }
 
   // Copy process state from p.
-  if((np->pgdir = copyuvm(proc->pgdir, proc->sz)) == 0){
+  if((np->pgdir = copyuvm(proc->pgdir, proc->sz, proc->ustack)) == 0){
     kfree(np->kstack);
     np->kstack = 0;
     np->state = UNUSED;
@@ -561,25 +561,34 @@ int waitpid(int pid, int *status, int options) {
 }
 
 int v2p(int virtual, int *physical){
-  
+  //Create variables for page directory entry, page table entry and the physical 
+  //page number respectively
   pde_t *pde;
   pde_t *pte;
   pde_t *physpagenum;
 
+  //Obtain the pde using mmu functions to get the bits necessary for the entry
   pde = &proc->pgdir[PDX(&virtual)];
 
+  //If the page is present(valid) then we can use it, otherwise return with an error
   if (*pde & PTE_P) {
+    //Get the page table entry using the page directory entry
     pte = (pde_t*)P2V(PTE_ADDR(*pde));
   } else {
     return -1;
   }
+  //Using the page tale entry, we can now get the page number for the physical
+  //address
   physpagenum = &pte[PTX(&virtual)];
 
+  //Again check to make sure that the page is present(valid), otherwise return with an error
   if (*physpagenum & PTE_P) {
+    //Finally, we get our physical address using the physical page number along with the
+    //offset from the virtual address
     *physical = PTE_ADDR(*physpagenum) | PTE_FLAGS(&virtual);
   } else {
     return -1;
   }
-
+  //Return the physical address 
   return (int)*physical;
 }

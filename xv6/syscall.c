@@ -17,7 +17,8 @@
 int
 fetchint(uint addr, int *ip)
 {
-  if(addr >= proc->sz || addr+4 > proc->sz)
+  if( (addr >= proc->sz && addr <= proc->ustack+PGSIZE) || 
+    (addr+4 > proc->sz && addr+4 <= proc->ustack+PGSIZE) )
     return -1;
   *ip = *(int*)(addr);
   return 0;
