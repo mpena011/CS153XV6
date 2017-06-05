@@ -46,6 +46,8 @@ trap(struct trapframe *tf)
     return;
   }
 
+  uint trapaddress;
+
   switch(tf->trapno){
   case T_IRQ0 + IRQ_TIMER:
     if(cpunum() == 0){
@@ -77,6 +79,26 @@ trap(struct trapframe *tf)
             cpunum(), tf->cs, tf->eip);
     lapiceoi();
     break;
+  case T_PGFLT:
+  trapaddress = rcr2();
+  if ((trapaddress > proc->ustack && trapaddress < proc->ustack + PGSIZE) &&
+    (proc->ustack - PGSIZE > proc->sz)) {
+    if (allocuvm(proc->pgdir, proc->ustack - PGSIZE, proc->ustack) != 0) {
+      proc->ustack = proc->ustack - PGSIZE;
+      clearpteu(proc->pgdir, (char*)(proc->ustack));
+      allowpteu(proc->pgdir, (char*)(proc->ustack + PGSIZE));
+      return;
+    }
+  } 
+
+  cprintf("pid %d %s: trap %d err %d on cpu %d "
+            "eip 0x%x addr 0x%x--kill proc\n",
+            proc->pid, proc->name, tf->trapno, tf->err, cpunum(), tf->eip,
+            rcr2());
+
+  proc->killed = 1;
+  break;
+
 
   //PAGEBREAK: 13
   default:

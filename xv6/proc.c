@@ -99,6 +99,7 @@ userinit(void)
   p->tf->eflags = FL_IF;
   p->tf->esp = PGSIZE;
   p->tf->eip = 0;  // beginning of initcode.S
+  p->ustack = 0;
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
@@ -148,8 +149,13 @@ fork(void)
     return -1;
   }
 
+  if (proc->ustack == 0) {
+    cprintf("parent ustack is not defined");
+    return -1;
+  }
+
   // Copy process state from p.
-  if((np->pgdir = copyuvm(proc->pgdir, proc->sz)) == 0){
+  if((np->pgdir = copyuvm(proc->pgdir, proc->sz,proc->ustack)) == 0){
     kfree(np->kstack);
     np->kstack = 0;
     np->state = UNUSED;
@@ -158,7 +164,7 @@ fork(void)
   np->sz = proc->sz;
   np->parent = proc;
   *np->tf = *proc->tf;
-
+  np->ustack = proc->ustack;
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
 

@@ -37,7 +37,11 @@ exec(char *path, char **argv)
     goto bad;
 
   // Load program into memory.
-  sz = PGSIZE;
+  sz = allocuvm(pgdir,0,PGSIZE);
+  if (sz == 0)
+    goto bad;
+  clearpteu(pgdir,(char*)sz-PGSIZE);
+
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
     if(readi(ip, (char*)&ph, off, sizeof(ph)) != sizeof(ph))
       goto bad;
@@ -61,10 +65,10 @@ exec(char *path, char **argv)
   // Allocate two pages at the next page boundary.
   // Make the first inaccessible.  Use the second as the user stack.
   sz = PGROUNDUP(sz);
-  if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE)) == 0)
+  if((sp = allocuvm(pgdir,USERTOP - 2*PGSIZE, USERTOP)) == 0)
     goto bad;
-  clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
-  sp = sz;
+  clearpteu(pgdir, (char*)(USERTOP - 2*PGSIZE));
+  proc->ustack = USERTOP - 2*PGSIZE;
 
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {

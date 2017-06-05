@@ -65,6 +65,7 @@ struct proc {
   char name[16];               // Process name (debugging)
   int status;		       // Process Status, added
   int priority;       //Priority, added 
+  uint ustack;        //points to the user stack guard page
 };
 
 // Process memory is laid out contiguously, low addresses first:
